@@ -1,0 +1,23 @@
+{
+  "name": "mapbox-wallpaper-generator",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "rust-analyzer.check.command": "clippy"
+      },
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "vadimcn.vscode-lldb"
+      ]
+    }
+  },
+  "postCreateCommand": "rustup toolchain install stable --profile minimal --component rustfmt --component clippy && rustup default stable && cargo fetch",
+  "postStartCommand": "cargo --version && rustc --version"
+}
