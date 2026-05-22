@@ -83,13 +83,31 @@ fn decode_tile(bytes: &[u8]) -> Result<RgbImage> {
 }
 
 pub fn save_rgb_image(image: &RgbImage, output_path: &Path, quality: u8) -> Result<()> {
-    let file = File::create(output_path)
-        .with_context(|| format!("failed to create output file at {}", output_path.display()))?;
-    let mut writer = std::io::BufWriter::new(file);
-    let mut encoder = JpegEncoder::new_with_quality(&mut writer, quality);
-    encoder
-        .encode_image(image)
-        .with_context(|| format!("failed to encode JPEG at {}", output_path.display()))
+    let ext = output_path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|s| s.to_ascii_lowercase())
+        .unwrap_or_else(|| "jpg".to_string());
+
+    match ext.as_str() {
+        "jpg" | "jpeg" => {
+            let file = File::create(output_path).with_context(|| {
+                format!("failed to create output file at {}", output_path.display())
+            })?;
+            let mut writer = std::io::BufWriter::new(file);
+            let mut encoder = JpegEncoder::new_with_quality(&mut writer, quality);
+            encoder
+                .encode_image(image)
+                .with_context(|| format!("failed to encode JPEG at {}", output_path.display()))
+        }
+        "png" => image
+            .save_with_format(output_path, ImageFormat::Png)
+            .with_context(|| format!("failed to encode PNG at {}", output_path.display())),
+        _ => Err(anyhow!(
+            "unsupported output extension '{}', use .jpg/.jpeg or .png",
+            ext
+        )),
+    }
 }
 
 #[cfg(test)]
@@ -97,6 +115,7 @@ mod tests {
     use super::*;
     use crate::downloader::DownloadedTile;
     use image::{ImageBuffer, Rgb};
+    use std::fs;
 
     fn jpeg_bytes(width: u32, height: u32, color: [u8; 3]) -> Vec<u8> {
         let img: RgbImage = ImageBuffer::from_pixel(width, height, Rgb(color));
@@ -168,5 +187,30 @@ mod tests {
         }];
         let stitched = stitch_tiles_with_size(tiles, 1, 1, 2);
         assert!(stitched.is_err());
+    }
+
+    #[test]
+    fn saves_jpeg_and_png_by_extension() {
+        let img: RgbImage = ImageBuffer::from_pixel(2, 2, Rgb([42, 42, 42]));
+        let base = std::env::temp_dir().join(format!(
+            "mapbox_wallpaper_generator_test_{}",
+            std::process::id()
+        ));
+        let jpg_path = base.with_extension("jpg");
+        let png_path = base.with_extension("png");
+
+        save_rgb_image(&img, &jpg_path, 90).unwrap();
+        save_rgb_image(&img, &png_path, 90).unwrap();
+
+        let jpg = fs::read(&jpg_path).unwrap();
+        let png = fs::read(&png_path).unwrap();
+        assert_eq!(&jpg[0..2], &[0xFF, 0xD8]);
+        assert_eq!(
+            &png[0..8],
+            &[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]
+        );
+
+        let _ = fs::remove_file(jpg_path);
+        let _ = fs::remove_file(png_path);
     }
 }
