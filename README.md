@@ -121,3 +121,8 @@ cargo fmt --all
 The test suite is fully offline — no network calls are made. Live end-to-end
 behaviour (real Nominatim + Mapbox requests) can be exercised by running the binary
 directly as shown in the [Usage](#usage) examples above.
+
+## Disclaimer
+
+This project is an independent work and is not affiliated with, endorsed by, or sponsored by Mapbox.
+Mapbox is a registered trademark of Mapbox, Inc.
