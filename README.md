@@ -66,7 +66,7 @@ Final canvas dimensions are `cols × 2560` by `rows × 2560`.
 
 ### Mapbox token
 
-A Mapbox playground token is bundled for quick prototyping; it requires the
+A Mapbox playground token can be used for quick prototyping; it requires the
 `Referer: https://docs.mapbox.com/` header that the tool sends automatically.
 For production use, create a free account at
 [mapbox.com](https://account.mapbox.com/auth/signup/) — the free tier includes
